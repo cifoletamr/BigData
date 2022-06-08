@@ -1,0 +1,2 @@
+Les 4 V del BigData
+Com funcona el MapReduce (Hadoop)

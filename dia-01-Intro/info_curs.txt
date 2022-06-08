@@ -1,0 +1,11 @@
+ALGORITMES DE BIGDATA
+
+Algoritmes de Big Data per a Enginyeries
+Codi de l'especialitat: IFCT166PO
+Nivell: 3
+Acció formativa: 22/CIFOFSE/609/0174771/014
+Data inici prevista:
+Data Final prevista:
+Horari previst: 9:30 a 14:30
+Modalitat d'impartició: Presencial
+Temari: https://www.fundae.es/docs/default-source/convocatorias-de-subvenciones/especialidades-formativas/IFCT166PO.pdf
