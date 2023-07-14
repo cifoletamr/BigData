@@ -1,0 +1,14 @@
+---
+title: "R Notebook"
+
+---
+
+```{r}
+lista = c(1:8)
+lista
+```
+
+```{r}
+plot(cars)
+```
+
