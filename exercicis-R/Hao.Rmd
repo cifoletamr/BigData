@@ -1,0 +1,353 @@
+---
+title: "R Notebook - practica Final "
+output: html_notebook
+---
+Activitat 2
+Hauràs de presentar un anàlisis de classificació supervisada o de
+clustering fet amb R. Ha d’incloure :
+1-Comentaris sobre les dades,
+2-Estudi previ a l’anàlisi (transformacions, gràfics)
+3-Model.Justificar perquè s’ha triat el model escollit i amb quins paràmetres s’aplica
+4-Finalment valorar quin és el resultat obtingut.
+
+Estudi de dades de reserves d hotels per poder predir les cancelacions [src](https://www.kaggle.com/code/achalsuresh/analysis-on-hotel-booking-data-using-r/notebook)
+
+```{r}
+# Instalació de paquets necesaris
+if(!require('ISLR')) {
+  install.packages('ISLR')
+}
+library(ISLR)       # load ISLR data package
+library(tidyverse)
+library(ggplot2)
+library(e1071)   #library needed to use Naive Bayes algorithm, svm algorithm
+library(rpart)   #Decision Tree
+library(rpart.plot)
+if(!require('randomForest')) {
+  install.packages('randomForest')
+}
+library(randomForest)       
+library(pROC) #ROC curve for analysis
+```
+
+1-Comentaris sobre les dades
+```{r}
+#carga de les dades
+
+hotel_data <- read_csv("C:/Users/Alumne_mati1/BigData/dat/hotel_bookings.csv")
+
+# Observem el tipus de dades per columnes
+
+spec(hotel_data)
+```
+Comentaris sobre les dades captades
+
+dades de caracter string en el cas com de nom del hotel, paisos, etc
+dades de caracten numeric com nombre d'adults, nens, etc
+dades de caracter dates  reserva
+No hi han boleans son valors numerics 0 o 1
+
+
+2-Estudi previ a l’anàlisi (transformacions, gràfics)
+
+Preparació de dades i explorarció
+```{r}
+hotel_data<- as_tibble(hotel_data)
+
+glimpse(hotel_data)
+```
+Tractament de columnes
+```{r}
+hotel_data<-hotel_data%>%
+  mutate(
+         hotel=as.factor(hotel),      
+         is_canceled=as.factor(is_canceled),
+         meal=as.factor(meal),
+         country=as.factor(country),
+         market_segment=as.factor(market_segment),
+         distribution_channel=as.factor(distribution_channel),
+         is_repeated_guest=as.factor(is_repeated_guest),
+         reserved_room_type=as.factor(reserved_room_type),
+         assigned_room_type=as.factor(assigned_room_type),
+         deposit_type=as.factor(deposit_type),
+         customer_type=as.factor(customer_type),
+         reservation_status=as.factor(reservation_status),
+         agent=as.factor(agent),
+         company=as.factor(company),
+         arrival_date_day_of_month=as.factor(arrival_date_day_of_month),
+         arrival_date_month=as.factor(arrival_date_month),
+         arrival_date_year=as.factor(arrival_date_year)
+         )
+```
+Analisis de les dades
+```{r}
+head(hotel_data)
+tail(hotel_data)
+summary(hotel_data)
+nrow(hotel_data)    # 119390
+ncol(hotel_data)    # 32
+```
+
+Numero de paisos que estan involucrats
+```{r}
+hotel_data%>%
+  group_by(country)%>%
+  summarise(num=n())%>%
+  arrange(desc(num))
+```
+
+Comprovació dels outliers
+```{r}
+hotel_data%>%
+  filter(adr>1000)
+```
+Degut a que nomes hi ha un valor extrany numeric i per sobre del filtre 
+indicat el substituirem per la mitjana per no perdre completament la entrada
+
+```{r}
+hotel_data = hotel_data%>%
+  mutate(adr = replace(adr, adr>1000, mean(adr)))
+```
+Creació de columnes per calcular el numero de dies d'estada i cost total
+```{r}
+hotel_data <- hotel_data %>% 
+  mutate(stay_nights_total = stays_in_weekend_nights + stays_in_week_nights,
+       stay_cost_total = adr * stay_nights_total)
+
+summary(hotel_data$stay_nights_total)
+summary(hotel_data$stay_cost_total)
+```
+
+Visualització de Dades
+
+Diagrama de punts amb el numero de nits /cost total
+```{r}
+ggplot(hotel_data, aes(x=stay_nights_total,y=stay_cost_total,shape=hotel,color=is_canceled))+
+  geom_point(alpha=1)
+```
+Exploració de les dades a traves de diferents segments del mercat
+```{r}
+ggplot(hotel_data, aes(x=stay_nights_total,y=stay_cost_total,shape=hotel,color=is_canceled))+
+  geom_point()+
+  facet_wrap(~market_segment)
+```
+En aquesta gràfica podem observar que en l'any 2016 va ser un dels anys amb més resereves i cancelacions 
+```{r}
+hotel_data%>%
+  ggplot(aes(x=arrival_date_year,fill=is_canceled))+
+  geom_bar()
+```
+Gràfica per tipus d'hotels
+```{r}
+hotel_data%>%
+  ggplot(aes(x=hotel,fill=is_canceled))+
+  geom_bar()
+```
+
+Per Asignació d' habitació
+```{r}
+hotel_data%>%
+  ggplot(aes(x=assigned_room_type,fill=is_canceled))+
+  geom_bar()
+```
+Medi de distribució 
+```{r}
+hotel_data%>%
+  ggplot(aes(x=distribution_channel,fill=is_canceled))+
+  geom_bar()
+```
+Histograma dels dies en llista de espera
+```{r}
+hotel_data%>%
+  filter(days_in_waiting_list>1)%>%
+  ggplot(aes(x=days_in_waiting_list,fill=is_canceled))+
+  geom_histogram(binwidth = 10)
+```
+gràfica per diposit
+```{r}
+hotel_data%>%
+  ggplot(aes(x=deposit_type,fill=is_canceled))+
+  geom_bar()
+```
+Cancelacions en temps de espera 
+```{r}
+hotel_data%>%
+  ggplot(aes(x=lead_time,fill=is_canceled))+
+  geom_histogram(binwidth=10,position="stack")
+```
+3-Model
+
+Data Modeling
+```{r}
+set.seed(1)   # set a random seed 
+index <- sample(nrow(hotel_data), nrow(hotel_data)*0.3)  
+
+hotel_data <- hotel_data %>%
+              filter(market_segment!='Undefined')
+
+test <- hotel_data[index,]       # test set
+training <-hotel_data[-index,]   # training set
+```
+
+```{r}
+training
+```
+
+```{r}
+test
+```
+
+Basant-nos en el tipus de dades que hem vist utilitzarem 21 variables del dataset que poden afectar a l'eleccio de la cancel·lació
+```{r}
+
+training_1 <- training[c('hotel','is_canceled','lead_time','adults','children','babies','meal',
+                         'market_segment','distribution_channel','is_repeated_guest',
+                         'previous_cancellations','previous_bookings_not_canceled','reserved_room_type',
+                         'deposit_type','days_in_waiting_list','customer_type','adr',
+                         'required_car_parking_spaces','stay_nights_total','stay_cost_total')]
+
+
+
+logit_training_model<-glm(is_canceled~.,family="binomial",data=training_1)
+summary(logit_training_model)
+```
+
+
+Prediccions 
+Logistic Regression
+```{r}
+test$logit_pred_prob<-predict(logit_training_model,test,type="response")
+test$logit_pred_class<-ifelse(test$logit_pred_prob>0.5,"1","0") 
+
+table(test$is_canceled==test$logit_pred_class)
+```
+Confusion Matrix
+```{r}
+table(test$logit_pred_class,test$is_canceled, dnn=c("predicted","actual"))
+```
+Logistic Regression Accuracy
+```{r}
+27939/nrow(test)
+```
+Amb un accuracy del 78% el posarem a proba contra altres models predictius
+
+Classification Tree
+```{r}
+training_model<-rpart(is_canceled~.,
+                      data=training_1, 
+                      method="class", 
+                      control=rpart.control(cp=0.03))
+
+rpart.plot(training_model)
+```
+Accuracy of the model
+```{r}
+test$ct_pred_prob<-predict(training_model,test)[,2]
+test$ct_pred_class<-predict(training_model,test,type="class")
+
+
+table(test$is_canceled==test$ct_pred_class)
+```
+k-cross validation
+```{r}
+set.seed(1)   # set a random seed 
+full_tree<-rpart(is_canceled~.,
+                     data=training_1, 
+                     method="class",
+                     control=rpart.control(cp=0, maxdepth = 3))
+
+rpart.plot(full_tree)
+```
+```{r}
+printcp(full_tree)   # xerror, xstd - cross validation results
+```
+```{r}
+plotcp(full_tree)
+```
+Hem d'escollir un valor de cp que minimitzi els errors del cross-validation.
+```{r}
+min_xerror<-full_tree$cptable[which.min(full_tree$cptable[,"xerror"]),]
+min_xerror
+```
+poda d'arbre amb el minim cp 
+```{r}
+min_xerror_tree<-prune(full_tree, cp=min_xerror[1])
+rpart.plot(min_xerror_tree)
+```
+Accuracy del arbre podat
+```{r}
+bp_tree<-min_xerror_tree
+test$ct_bp_pred_prob<-predict(bp_tree,test)[,2]
+test$ct_bp_pred_class=ifelse(test$ct_bp_pred_prob>0.5,"Yes","No")
+
+table(test$ct_bp_pred_class,test$is_canceled, dnn=c("predicted","actual"))
+```
+```{r}
+(22486+4964)/nrow(test)
+```
+El acuracy ha empitjorat ho intentarem amb un random forest
+
+Random Forest
+```{r}
+set.seed(1)
+rf_training_model<-randomForest(is_canceled~.,   
+                       data=training_1,          
+                       ntree=500,                     
+                       cutoff=c(0.5,0.5), 
+                       mtry=2,
+                       importance=TRUE)
+rf_training_model
+```
+
+Millora del model
+```{r}
+set.seed(1)              
+res <- tuneRF(x = training_1%>%select(-is_canceled),
+              y = training_1$is_canceled,mtryStart=2,
+              ntreeTry = 500)
+```
+En aquesta grafica es pot observar que en punt més baix es cuan es troba en mtry = 8
+```{r}			  
+rf_best_model<-randomForest(is_canceled~.,              # model formula
+                       data=training_1,          # use a training dataset for building a model
+                       ntree=500,                     
+                       cutoff=c(0.5,0.5), 
+                       mtry=8,
+                       importance=TRUE)
+rf_best_model
+```
+```{r}
+test$rf_pred_prob<-predict(rf_best_model,test,type="prob")[,2]   #use a test dataset for model evaluation
+test$rf_pred_class<-predict(rf_best_model,test,type="class")
+
+table(test$is_canceled==test$rf_pred_class)
+```
+# FALSE  TRUE 
+#  6365 29449 
+
+Random Forest Accuracy 
+```{r}
+29449/nrow(test)
+```
+El amb aquest model predictiu hem obbtingut un 82.22% d'acert,
+s'ha millorat el rendiment respecte els altres models.
+
+Curves ROC
+```{r}
+ct_roc<-roc(test$is_canceled,test$ct_bp_pred_prob,auc=TRUE)
+
+logit_roc<-roc(test$is_canceled,test$logit_pred_prob,auc=TRUE)
+
+rf_roc<-roc(test$is_canceled,test$rf_pred_prob,auc=TRUE)
+
+
+plot(logit_roc,print.auc=TRUE,print.auc.y=.4, col="green")
+plot(rf_roc,print.auc=TRUE,print.auc.y=.1,col="yellow",add=TRUE)
+plot(ct_roc,print.auc=TRUE,print.auc.y=.2, col="blue",add=TRUE)
+```
+4-Finalment valorar quin és el resultat obtingut.
+
+Random Forest mostra el millor resultat dels models estudiats amb una tassa d'acert
+superior al 80% amb un resultat del 82.22%
+
+
