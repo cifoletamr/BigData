@@ -1,22 +1,122 @@
 <html>
-  <head>
+<head>
+	<title>web Empresa</title>
+    <meta charset=utf-8 />
+		<style>
+			body {
+			  font-family: Arial, Helvetica, sans-serif;
+			  border-collapse: collapse;
+			  width: 100%;
+			}
 
-  </head>
-  <body>
-  <h1>¿Cómo crear un currículum en HTML?</h1>
-Los pasos a seguir para crear un currículum en HTML no son demasiado diferentes a los que deberíamos mantener para preparar CV en cualquier otro formato.
+			 td, th {
+			  border: 1px solid #ddd;
+			  padding: 8px;
+			}
 
-En primer lugar, es necesario definir el estilo y estética que debe seguir el documento, ya que entorno a él se van a delimitar el resto de elementos gráficos.
+			tr:nth-child(even){background-color: #f2f2f2;}
 
-    <h2>¿Se busca una imagen profesional?</h2> 
-¿El sector al que se dirige la oferta es muy formal o por el contrario es más bien cercano? ¿Se prima la creatividad o por el contrario la seriedad?
+			tr:hover {background-color: #ddd;}
 
-Tener en cuenta estos elementos es muy importante para poder transmitir la imagen que se desea en realidad, y que resulta adecuada respetando el estilo de la empresa para la que se presenta la candidatura.
+			th {
+			  padding-top: 12px;
+			  padding-bottom: 12px;
+			  text-align: left;
+			  background-color: #04AA6D;
+			  color: white;
+			}
 
-Algo similar sucede en el caso de los colores. Si se pretende hacer hincapié en el ambiente corporativo será más adecuado utilizar un color azul o gris en el curriculum vitae.
+			/* Responsive layout - makes the three columns stack on top of each other instead of next to each other */
+			@media screen and (max-width:600px) {
+			  .column {
+				width: 100%;
+			  }
+			}
+</style>
 
-Por el contrario, para entornos más joviales e innovadores, el verde, amarillo o naranja son colores más acertados.
+</head>
+<body>
+		<style>
+			/* Style the header */
+			.header {
+			  background-color: #e62246;
+			  color : #f5f0f1;
+			  padding: 20px;
+			  text-align: center;
+			}
 
-Al igual ocurre con las tipografías. Existen ciertos estilos más tradicionales como el de Times New Roman, que se utilizan en el CV en HTML para destacar seriedad y antigüedad; mientras que tipografías como Helvética o Arial son más adecuadas para transmitir modernidad y juventud.
-  </body>
-  </html>
+			/* Style the top navigation bar */
+			.topnav {
+			  overflow: hidden;
+			  background-color: #333;
+			}
+
+			/* Style the topnav links */
+			.topnav a {
+			  float: left;
+			  display: block;
+			  color: #f2f2f2;
+			  text-align: center;
+			  padding: 14px 16px;
+			  text-decoration: none;
+			}
+
+			/* Change color on hover */
+			.topnav a:hover {
+			  background-color: #ddd;
+			  color: black;
+			}
+
+			/* Create three equal columns that floats next to each other */
+			.column {
+			  float: left;
+			  width: 33.33%;
+			  padding: 15px;
+			}
+
+			/* Clear floats after the columns */
+			.row:after {
+			  content: "";
+			  display: table;
+			  clear: both;
+			}
+
+			/* Responsive layout - makes the three columns stack on top of each other instead of next to each other */
+			@media screen and (max-width:600px) {
+			  .column {
+				width: 100%;
+			  }
+			}
+	</style>
+
+<div class="header">
+  <h1>Visita Viena</h1>
+  <p>Resize the browser window to see the responsive effect.</p>
+</div>
+
+<div class="topnav">
+  <a href="#">home</a>
+  <a href="../programació">programació</a>
+  <a href="../ML-BigData">ML-BigData</a>
+</div>
+<div class="row">
+<img src="cosmos.png" 
+alt="viena river">
+
+</div>
+<div class="row">
+  <div class="column">
+    <h2>Column</h2>
+    <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Maecenas sit amet pretium urna. Vivamus venenatis velit nec neque ultricies, eget elementum magna tristique. Quisque vehicula, risus eget aliquam placerat, purus leo tincidunt eros, eget luctus quam orci in velit. Praesent scelerisque tortor sed accumsan convallis.</p>
+  </div>
+  
+  <div class="column">
+    <h2>Column</h2>
+    <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Maecenas sit amet pretium urna. Vivamus venenatis velit nec neque ultricies, eget elementum magna tristique. Quisque vehicula, risus eget aliquam placerat, purus leo tincidunt eros, eget luctus quam orci in velit. Praesent scelerisque tortor sed accumsan convallis.</p>
+  </div>
+  
+  <div class="column">
+    <h2>Column</h2>
+    <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Maecenas sit amet pretium urna. Vivamus venenatis velit nec neque ultricies, eget elementum magna tristique. Quisque vehicula, risus eget aliquam placerat, purus leo tincidunt eros, eget luctus quam orci in velit. Praesent scelerisque tortor sed accumsan convallis.</p>
+  </div>
+</div>
